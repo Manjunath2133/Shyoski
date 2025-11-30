@@ -5,7 +5,7 @@ export const recordPayment = async (c) => {
     const projectId = c.env.FIREBASE_PROJECT_ID;
     if (!projectId) { return c.json({ message: 'Firebase project ID is not configured.' }, 500); }
 
-    const studentId = c.get('user').id;
+    const studentId = c.get('user').uid;
 
     try {
         const certificateId = `SHYOSKI-CERT-${studentId.substring(0, 5)}-${Date.now()}`;
@@ -16,7 +16,7 @@ export const recordPayment = async (c) => {
         };
 
         const { fields, updateMask } = toFirestoreUpdate(updateData);
-        const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${studentId}?${updateMask}`;
+        const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${studentId}?updateMask.fieldPaths=${updateMask}`;
 
         const accessToken = await getGcpAccessToken(c.env);
 

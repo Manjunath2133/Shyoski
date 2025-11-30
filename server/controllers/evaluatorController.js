@@ -13,7 +13,7 @@ export const updateSubmissionStatus = async (c) => {
         const updateData = { status, evaluatorId };
         const { fields, updateMask } = toFirestoreUpdate(updateData);
         
-        const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/submissions/${docId}?${updateMask}`;
+        const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/submissions/${docId}?updateMask.fieldPaths=${updateMask}`;
         const accessToken = await getGcpAccessToken(c.env);
 
         const response = await fetch(firestoreUrl, {
@@ -49,7 +49,7 @@ export const addFeedback = async (c) => {
         const updateData = { feedback };
         const { fields, updateMask } = toFirestoreUpdate(updateData);
 
-        const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/submissions/${docId}?${updateMask}`;
+        const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/submissions/${docId}?updateMask.fieldPaths=${updateMask}`;
         const accessToken = await getGcpAccessToken(c.env);
 
         const response = await fetch(firestoreUrl, {
@@ -100,7 +100,10 @@ export const getStudentSubmissions = async (c) => {
 
         if (response.ok) {
             const docs = await response.json();
-            const submissions = docs.map(doc => fromFirestore(doc.document));
+            if (!Array.isArray(docs)) {
+                return c.json([]); // Return empty array if response is not an array
+            }
+            const submissions = docs.filter(doc => doc.document).map(doc => fromFirestore(doc.document));
             return c.json(submissions);
         } else {
             const error = await response.json();

@@ -20,7 +20,7 @@ export const submitProject = async (c) => {
     if (!projectId) { return c.json({ message: 'Firebase project ID is not configured.' }, 500); }
 
     const { week, repoUrl } = await c.req.json();
-    const studentId = c.get('user').id; // from checkRole middleware
+    const studentId = c.get('user').uid; // from checkRole middleware
     console.log('Submitting project for student:', studentId);
 
     try {
@@ -60,7 +60,7 @@ export const getStudentSubmissions = async (c) => {
     const projectId = c.env.FIREBASE_PROJECT_ID;
     if (!projectId) { return c.json({ message: 'Firebase project ID is not configured.' }, 500); }
 
-    const studentId = c.get('user').id;
+    const studentId = c.get('user').uid;
 
     try {
         const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery`;
