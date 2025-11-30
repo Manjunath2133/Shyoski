@@ -1,11 +1,7 @@
 import { sign } from '@tsndr/cloudflare-worker-jwt';
 
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
-const GOOGLE_AUTH_SCOPES = [
-  'https://www.googleapis.com/auth/datastore',
-  'https://www.googleapis.com/auth/firebase.database',
-  'https://www.googleapis.com/auth/userinfo.email',
-];
+const GOOGLE_AUTH_SCOPE = 'https://www.googleapis.com/auth/datastore';
 
 let accessToken = null;
 let tokenExpiry = 0;
@@ -34,7 +30,7 @@ export async function getGcpAccessToken(env) {
     aud: GOOGLE_TOKEN_URL,
     iat: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + 3600, // 1 hour
-    scope: GOOGLE_AUTH_SCOPES.join(' '),
+    scope: GOOGLE_AUTH_SCOPE,
   };
 
   const jwt = await sign(jwtPayload, creds.private_key, { algorithm: 'RS256' });
