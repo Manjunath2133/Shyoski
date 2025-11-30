@@ -1,4 +1,5 @@
 import { fromFirestore } from '../utils/firebase.js';
+import { getGcpAccessToken } from '../utils/gcp-auth.js';
 
 // IMPORTANT: The functions `getAllUsers` and `updateUserRole` use the Firebase Admin Auth API,
 // which is not available in Cloudflare Workers. To maintain this functionality, you should
@@ -20,12 +21,15 @@ export const getRecentSubmissions = async (c) => {
 
     try {
         const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents`;
-        const idToken = c.req.header('Authorization').split('Bearer ')[1];
+        const accessToken = await getGcpAccessToken(c.env);
 
         // Fetch recent submissions
         const submissionsResponse = await fetch(`${firestoreUrl}:runQuery`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            },
             body: JSON.stringify({
                 structuredQuery: {
                     from: [{ collectionId: 'submissions' }],
@@ -37,8 +41,13 @@ export const getRecentSubmissions = async (c) => {
         const submissionsDocs = await submissionsResponse.json();
 
         // Fetch all users
-        const usersResponse = await fetch(`${firestoreUrl}/users`, {
-            headers: { 'Authorization': `Bearer ${idToken}` }
+        const usersResponse = await fetch(`${firestoreUrl}:runQuery`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({ structuredQuery: { from: [{ collectionId: 'users' }] } })
         });
         const usersDocs = await usersResponse.json();
 

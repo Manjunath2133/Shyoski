@@ -1,5 +1,6 @@
 import { fromFirestore } from '../utils/firebase.js';
 import Project from '../models/project.js';
+import { getGcpAccessToken } from '../utils/gcp-auth.js';
 
 export const createProject = async (c) => {
     return c.json({ message: 'Not Implemented. This operation requires a transaction and is best handled by a Cloud Function.' }, 501);
@@ -13,11 +14,14 @@ export const getProjects = async (c) => {
 
     try {
         const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery`;
-        const idToken = c.req.header('Authorization').split('Bearer ')[1];
+        const accessToken = await getGcpAccessToken(c.env);
 
         const response = await fetch(firestoreUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            },
             body: JSON.stringify({
                 structuredQuery: {
                     from: [{ collectionId: 'projects' }],

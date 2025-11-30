@@ -1,5 +1,6 @@
 import { toFirestoreUpdate, fromFirestore } from '../utils/firebase.js';
 import Company from '../models/company.js';
+import { getGcpAccessToken } from '../utils/gcp-auth.js';
 
 function companyToFirestore(company) {
     return {
@@ -26,13 +27,13 @@ export const createCompany = async (c) => {
         const newCompany = new Company(name, owner);
         const firestoreCompany = companyToFirestore(newCompany);
 
-        const idToken = c.req.header('Authorization').split('Bearer ')[1];
+        const accessToken = await getGcpAccessToken(c.env);
         const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/companies`;
 
         const response = await fetch(firestoreUrl, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${idToken}`,
+                'Authorization': `Bearer ${accessToken}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(firestoreCompany)
@@ -60,11 +61,14 @@ export const getCompanies = async (c) => {
     try {
         const userId = c.get('user').uid;
         const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery`;
-        const idToken = c.req.header('Authorization').split('Bearer ')[1];
+        const accessToken = await getGcpAccessToken(c.env);
 
         const response = await fetch(firestoreUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            },
             body: JSON.stringify({
                 structuredQuery: {
                     from: [{ collectionId: 'companies' }],

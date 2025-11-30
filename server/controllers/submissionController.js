@@ -1,5 +1,6 @@
 import { fromFirestore } from '../utils/firebase.js';
 import Submission from '../models/submission.js';
+import { getGcpAccessToken } from '../utils/gcp-auth.js';
 
 function submissionToFirestore(submission) {
     return {
@@ -30,12 +31,12 @@ export const submitProject = async (c) => {
         const docId = `${studentId}_week${week}`;
         const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/submissions/${docId}`;
         
-        const idToken = c.req.header('Authorization').split('Bearer ')[1];
+        const accessToken = await getGcpAccessToken(c.env);
 
         const response = await fetch(firestoreUrl, {
             method: 'PATCH', // Using PATCH with the doc ID in the URL will create or overwrite.
             headers: {
-                'Authorization': `Bearer ${idToken}`,
+                'Authorization': `Bearer ${accessToken}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(firestoreSubmission)
@@ -63,11 +64,14 @@ export const getStudentSubmissions = async (c) => {
 
     try {
         const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery`;
-        const idToken = c.req.header('Authorization').split('Bearer ')[1];
+        const accessToken = await getGcpAccessToken(c.env);
 
         const response = await fetch(firestoreUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            },
             body: JSON.stringify({
                 structuredQuery: {
                     from: [{ collectionId: 'submissions' }],

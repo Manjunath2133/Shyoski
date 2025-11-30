@@ -1,4 +1,5 @@
 import { toFirestoreUpdate, fromFirestore } from '../utils/firebase.js';
+import { getGcpAccessToken } from '../utils/gcp-auth.js';
 
 // Get user by ID
 export const getUserById = async (c) => {
@@ -42,12 +43,12 @@ export const updateUser = async (c) => {
         const { fields, updateMask } = toFirestoreUpdate(body);
         const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}?${updateMask}`;
 
-        const idToken = c.req.header('Authorization').split('Bearer ')[1];
+        const accessToken = await getGcpAccessToken(c.env);
 
         const response = await fetch(firestoreUrl, {
             method: 'PATCH',
             headers: {
-                'Authorization': `Bearer ${idToken}`,
+                'Authorization': `Bearer ${accessToken}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ fields })

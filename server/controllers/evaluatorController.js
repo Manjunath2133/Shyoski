@@ -1,4 +1,5 @@
 import { toFirestoreUpdate, fromFirestore } from '../utils/firebase.js';
+import { getGcpAccessToken } from '../utils/gcp-auth.js';
 
 export const updateSubmissionStatus = async (c) => {
     const projectId = c.env.FIREBASE_PROJECT_ID;
@@ -13,11 +14,14 @@ export const updateSubmissionStatus = async (c) => {
         const { fields, updateMask } = toFirestoreUpdate(updateData);
         
         const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/submissions/${docId}?${updateMask}`;
-        const idToken = c.req.header('Authorization').split('Bearer ')[1];
+        const accessToken = await getGcpAccessToken(c.env);
 
         const response = await fetch(firestoreUrl, {
             method: 'PATCH',
-            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({ fields })
         });
 
@@ -46,11 +50,14 @@ export const addFeedback = async (c) => {
         const { fields, updateMask } = toFirestoreUpdate(updateData);
 
         const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/submissions/${docId}?${updateMask}`;
-        const idToken = c.req.header('Authorization').split('Bearer ')[1];
+        const accessToken = await getGcpAccessToken(c.env);
 
         const response = await fetch(firestoreUrl, {
             method: 'PATCH',
-            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({ fields })
         });
 
@@ -75,11 +82,14 @@ export const getStudentSubmissions = async (c) => {
 
     try {
         const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery`;
-        const idToken = c.req.header('Authorization').split('Bearer ')[1];
+        const accessToken = await getGcpAccessToken(c.env);
         
         const response = await fetch(firestoreUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            },
             body: JSON.stringify({
                 structuredQuery: {
                     from: [{ collectionId: 'submissions' }],
@@ -109,23 +119,33 @@ export const getAllSubmissions = async (c) => {
 
     try {
         const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents`;
-        const idToken = c.req.header('Authorization').split('Bearer ')[1];
+        const accessToken = await getGcpAccessToken(c.env);
 
         const [submissionsRes, usersRes] = await Promise.all([
             fetch(`${firestoreUrl}:runQuery`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
                 body: JSON.stringify({ structuredQuery: { from: [{ collectionId: 'submissions' }] } })
             }),
-            fetch(`${firestoreUrl}/users`, { headers: { 'Authorization': `Bearer ${idToken}` }})
+            fetch(`${firestoreUrl}:runQuery`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({ structuredQuery: { from: [{ collectionId: 'users' }] } })
+            })
         ]);
 
         const submissionsDocs = await submissionsRes.json();
         const usersDocs = await usersRes.json();
         
         const users = {};
-        if(usersDocs.documents) {
-            usersDocs.documents.forEach(doc => {
+        if (usersDocs && Array.isArray(usersDocs)) {
+            usersDocs.forEach(doc => {
                 const userData = fromFirestore(doc);
                 users[userData.id] = { name: userData.name, email: userData.email };
             });
