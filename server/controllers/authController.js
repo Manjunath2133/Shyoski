@@ -112,7 +112,7 @@ export const verifyTokenAndCreateUser = async (c) => {
     if (getResp.ok) {
       const userDoc = await getResp.json();
       const user = fromFirestore(userDoc);
-      return c.json(user, 200);
+      return c.json([user], 200);
     }
 
     if (getResp.status !== 404) {
@@ -140,7 +140,7 @@ export const verifyTokenAndCreateUser = async (c) => {
 
     if (createResp.ok) {
       // created
-      return c.json(newUser, 201);
+      return c.json([newUser], 201);
     } else {
       const errBody = await safeJson(createResp);
       console.error('Error creating user in Firestore:', createResp.status, errBody);
