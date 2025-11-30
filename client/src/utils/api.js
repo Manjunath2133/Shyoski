@@ -1,1 +1,0 @@
-export const BASE_URL = 'https://shyoski.in/api';
