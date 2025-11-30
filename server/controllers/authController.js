@@ -72,7 +72,7 @@ import User from '../models/user.js';
 export const verifyTokenAndCreateUser = async (c) => {
   try {
     const { idToken } = await c.req.json().catch(() => ({}));
-    const projectId = 'shyoski-88e92';
+    const projectId = c.env.FIREBASE_PROJECT_ID;
     console.log('Firebase Project ID:', projectId);
 
     if (!projectId) {
@@ -105,7 +105,7 @@ export const verifyTokenAndCreateUser = async (c) => {
     const getResp = await fetch(firestoreDocUrl, {
       method: 'GET',
       headers: {
-        Authorization: `Bearer ${idToken}`
+        Authorization: `Bearer ${idToken}`,
       }
     });
 
