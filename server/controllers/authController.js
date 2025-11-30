@@ -5,6 +5,7 @@ import User from '../models/user.js';
 export const verifyTokenAndCreateUser = async (c) => {
     const { idToken } = await c.req.json();
     const projectId = c.env.FIREBASE_PROJECT_ID;
+    console.log('Firebase Project ID:', projectId);
 
     if (!projectId) {
         return c.json({ message: 'Firebase project ID is not configured.' }, 500);

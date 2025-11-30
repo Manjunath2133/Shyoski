@@ -16,6 +16,7 @@ import EvaluatorRoute from './components/EvaluatorRoute';
 import MainLayout from './layout/MainLayout';
 import PublicLayout from './layout/PublicLayout';
 import { AnimatePresence } from 'framer-motion';
+import LanderPage from './pages/LanderPage';
 import './App.css';
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
   return (
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
+          <Route path="/lander" element={<LanderPage />} />
           <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
           <Route path="/login" element={<PublicLayout><LoginPage /></PublicLayout>} />
           <Route path="/user/:userId" element={<PublicLayout><PublicProfilePage /></PublicLayout>} />
