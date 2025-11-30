@@ -19,11 +19,15 @@ export async function getGcpAccessToken(env) {
 
   const serviceAccountJson = env.GOOGLE_SERVICE_ACCOUNT_JSON;
   if (!serviceAccountJson) {
+    console.error('CRITICAL: GOOGLE_SERVICE_ACCOUNT_JSON secret is not set in Cloudflare Worker environment.');
     throw new Error('GOOGLE_SERVICE_ACCOUNT_JSON secret is not set.');
   }
 
   const creds = JSON.parse(serviceAccountJson);
-
+  console.log(`Attempting to generate GCP token for service account: ${creds.client_email}`);
+  if (!creds.client_email || !creds.private_key) {
+    console.error('CRITICAL: GOOGLE_SERVICE_ACCOUNT_JSON is malformed. It must contain client_email and private_key.');
+  }
   const jwtPayload = {
     iss: creds.client_email,
     sub: creds.client_email,
@@ -48,11 +52,13 @@ export async function getGcpAccessToken(env) {
 
   const tokenData = await response.json();
   if (!response.ok || !tokenData.access_token) {
-    console.error('Error fetching GCP access token:', tokenData);
+    console.error('CRITICAL: Failed to obtain Google Cloud access token. Response from Google:', JSON.stringify(tokenData, null, 2));
     throw new Error('Failed to obtain Google Cloud access token.');
   }
 
   accessToken = tokenData.access_token;
+  console.log('Successfully obtained new GCP access token.');
+
   // Cache token, refreshing 5 minutes before it expires
   tokenExpiry = Date.now() + (tokenData.expires_in - 300) * 1000;
 
