@@ -3,6 +3,7 @@ import { useUser } from '../context/UserContext';
 import { auth } from '../firebase';
 import { Box, Typography, Paper, Link, Button, Grid, Chip, Tabs, Tab, CircularProgress, Card, CardContent, CardActions, TextField, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
 import { motion } from 'framer-motion';
+import { BASE_URL } from '../utils/api';
 
 const EvaluatorDashboard = () => {
     const { user } = useUser();
@@ -20,10 +21,10 @@ const EvaluatorDashboard = () => {
                 try {
                     const idToken = await auth.currentUser.getIdToken();
                     const [submissionsResponse, projectsResponse] = await Promise.all([
-                        fetch('http://localhost:8000/api/evaluator/all-submissions', {
+                        fetch(`${BASE_URL}/evaluator/all-submissions`, {
                             headers: { 'Authorization': `Bearer ${idToken}` }
                         }),
-                        fetch('http://localhost:8000/api/evaluator/student-projects', {
+                        fetch(`${BASE_URL}/evaluator/student-projects`, {
                             headers: { 'Authorization': `Bearer ${idToken}` }
                         })
                     ]);
@@ -44,7 +45,7 @@ const EvaluatorDashboard = () => {
     const handleUpdateStatus = async (studentId, week, status) => {
         try {
             const idToken = await auth.currentUser.getIdToken();
-            await fetch('http://localhost:8000/api/evaluator/submission', {
+            await fetch(`${BASE_URL}/evaluator/submission`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -76,7 +77,7 @@ const EvaluatorDashboard = () => {
 
         try {
             const idToken = await auth.currentUser.getIdToken();
-            await fetch(`http://localhost:8000/api/evaluator/submission/feedback`, {
+            await fetch(`${BASE_URL}/evaluator/submission/feedback`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

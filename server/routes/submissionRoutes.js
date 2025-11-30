@@ -1,9 +1,10 @@
-const express = require('express');
-const router = express.Router();
-const submissionController = require('../controllers/submissionController');
-const checkRole = require('../middleware/authMiddleware');
+import { Hono } from 'hono';
+import * as submissionController from '../controllers/submissionController.js';
+import checkRole from '../middleware/authMiddleware.js';
 
-router.post('/submit', checkRole(['student']), submissionController.submitProject);
-router.get('/', checkRole(['student']), submissionController.getStudentSubmissions);
+const app = new Hono();
 
-module.exports = router;
+app.post('/submit', checkRole(['student']), submissionController.submitProject);
+app.get('/', checkRole(['student']), submissionController.getStudentSubmissions);
+
+export default app;

@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, useMemo } from 'react';
 import { auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { BASE_URL } from '../utils/api';
 
 const UserContext = createContext();
 
@@ -13,7 +14,7 @@ export const UserProvider = ({ children }) => {
             if (firebaseUser) {
                 // User is signed in, get id token and fetch user data from backend
                 const idToken = await firebaseUser.getIdToken();
-                const response = await fetch('http://localhost:8000/api/auth/verify-token', {
+                const response = await fetch(`${BASE_URL}/auth/verify-token`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

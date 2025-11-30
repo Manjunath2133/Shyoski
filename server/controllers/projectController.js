@@ -1,126 +1,111 @@
-const admin = require('firebase-admin');
-const db = admin.firestore();
-const Project = require('../models/project');
+import { fromFirestore } from '../utils/firebase.js';
+import Project from '../models/project.js';
 
-// Create a new project
-exports.createProject = async (req, res) => {
-    try {
-        const { title, description, technologies, liveUrl, repoUrl, screenshots } = req.body;
-        const author = req.user.uid;
-        const newProject = new Project(title, description, technologies, liveUrl, repoUrl, screenshots, author);
-        
-        const projectRef = await db.collection('projects').add({ ...newProject });
-        
-        // Add the project to the user's portfolio
-        const userRef = db.collection('users').doc(author);
-        const userDoc = await userRef.get();
-        const userData = userDoc.data();
-        const updatedPortfolio = [...userData.portfolio, projectRef.id];
-        await userRef.update({ portfolio: updatedPortfolio });
-        
-        res.status(201).json({ id: projectRef.id, ...newProject });
-    } catch (error) {
-        console.error('Error creating project:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
+export const createProject = async (c) => {
+    return c.json({ message: 'Not Implemented. This operation requires a transaction and is best handled by a Cloud Function.' }, 501);
 };
 
-// Get all projects for a user
-exports.getProjects = async (req, res) => {
-    try {
-        const author = req.user.uid;
-        const projectsSnapshot = await db.collection('projects').where('author', '==', author).get();
-        const projects = projectsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        res.json(projects);
-    } catch (error) {
-        console.error('Error getting projects:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
-};
+export const getProjects = async (c) => {
+    const projectId = c.env.FIREBASE_PROJECT_ID;
+    if (!projectId) { return c.json({ message: 'Firebase project ID is not configured.' }, 500); }
 
-// Get all projects for a user by id
-exports.getProjectsByUserId = async (req, res) => {
-    try {
-        const author = req.params.id;
-        const projectsSnapshot = await db.collection('projects').where('author', '==', author).get();
-        const projects = projectsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        res.json(projects);
-    } catch (error) {
-        console.error('Error getting projects:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
-};
+    const author = c.get('user').uid;
 
-// Get a project by ID
-exports.getProjectById = async (req, res) => {
     try {
-        const projectId = req.params.id;
-        const projectDoc = await db.collection('projects').doc(projectId).get();
-        if (!projectDoc.exists) {
-            return res.status(404).json({ message: 'Project not found' });
+        const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery`;
+        const idToken = c.req.header('Authorization').split('Bearer ')[1];
+
+        const response = await fetch(firestoreUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+            body: JSON.stringify({
+                structuredQuery: {
+                    from: [{ collectionId: 'projects' }],
+                    where: { fieldFilter: { field: { fieldPath: 'author' }, op: 'EQUAL', value: { stringValue: author } } }
+                }
+            })
+        });
+
+        if (response.ok) {
+            const docs = await response.json();
+            const projects = docs.map(doc => fromFirestore(doc.document));
+            return c.json(projects);
+        } else {
+            const error = await response.json();
+            console.error('Error getting projects:', error);
+            return c.json({ message: 'Server error' }, 500);
         }
-        res.json({ id: projectDoc.id, ...projectDoc.data() });
+    } catch (error) {
+        console.error('Error getting projects:', error);
+        return c.json({ message: 'Server error' }, 500);
+    }
+};
+
+export const getProjectsByUserId = async (c) => {
+    const projectId = c.env.FIREBASE_PROJECT_ID;
+    if (!projectId) { return c.json({ message: 'Firebase project ID is not configured.' }, 500); }
+
+    const author = c.req.param('id');
+
+    try {
+        const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery`;
+        
+        const response = await fetch(firestoreUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }, // This is a public route, no auth needed
+            body: JSON.stringify({
+                structuredQuery: {
+                    from: [{ collectionId: 'projects' }],
+                    where: { fieldFilter: { field: { fieldPath: 'author' }, op: 'EQUAL', value: { stringValue: author } } }
+                }
+            })
+        });
+
+        if (response.ok) {
+            const docs = await response.json();
+            const projects = docs.map(doc => fromFirestore(doc.document));
+            return c.json(projects);
+        } else {
+            const error = await response.json();
+            console.error('Error getting projects:', error);
+            return c.json({ message: 'Server error' }, 500);
+        }
+    } catch (error) {
+        console.error('Error getting projects:', error);
+        return c.json({ message: 'Server error' }, 500);
+    }
+};
+
+export const getProjectById = async (c) => {
+    const projectId = c.env.FIREBASE_PROJECT_ID;
+    if (!projectId) { return c.json({ message: 'Firebase project ID is not configured.' }, 500); }
+
+    try {
+        const projId = c.req.param('id');
+        const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/projects/${projId}`;
+        
+        const response = await fetch(firestoreUrl);
+
+        if (response.ok) {
+            const projectDoc = await response.json();
+            return c.json(fromFirestore(projectDoc));
+        } else if (response.status === 404) {
+            return c.json({ message: 'Project not found' }, 404);
+        } else {
+            const error = await response.json();
+            console.error('Error getting project:', error);
+            return c.json({ message: 'Server error' }, 500);
+        }
     } catch (error) {
         console.error('Error getting project by ID:', error);
-        res.status(500).json({ message: 'Server error' });
+        return c.json({ message: 'Server error' }, 500);
     }
 };
 
-// Update a project
-exports.updateProject = async (req, res) => {
-    try {
-        const projectId = req.params.id;
-        const author = req.user.uid;
-        
-        const projectRef = db.collection('projects').doc(projectId);
-        const projectDoc = await projectRef.get();
-        
-        if (!projectDoc.exists) {
-            return res.status(404).json({ message: 'Project not found' });
-        }
-        
-        if (projectDoc.data().author !== author) {
-            return res.status(403).json({ message: 'User not authorized to update this project' });
-        }
-        
-        await projectRef.update(req.body);
-        
-        res.json({ id: projectId, ...req.body });
-    } catch (error) {
-        console.error('Error updating project:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
+export const updateProject = async (c) => {
+    return c.json({ message: 'Not Implemented. This operation requires an ownership check and is best handled by a Cloud Function.' }, 501);
 };
 
-// Delete a project
-exports.deleteProject = async (req, res) => {
-    try {
-        const projectId = req.params.id;
-        const author = req.user.uid;
-        
-        const projectRef = db.collection('projects').doc(projectId);
-        const projectDoc = await projectRef.get();
-        
-        if (!projectDoc.exists) {
-            return res.status(404).json({ message: 'Project not found' });
-        }
-        
-        if (projectDoc.data().author !== author) {
-            return res.status(403).json({ message: 'User not authorized to delete this project' });
-        }
-        
-        await projectRef.delete();
-        
-        // Remove the project from the user's portfolio
-        const userRef = db.collection('users').doc(author);
-        const userDoc = await userRef.get();
-        const userData = userDoc.data();
-        const updatedPortfolio = userData.portfolio.filter(id => id !== projectId);
-        await userRef.update({ portfolio: updatedPortfolio });
-        
-        res.json({ message: 'Project deleted successfully' });
-    } catch (error) {
-        console.error('Error deleting project:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
+export const deleteProject = async (c) => {
+    return c.json({ message: 'Not Implemented. This operation requires a transaction and is best handled by a Cloud Function.' }, 501);
 };

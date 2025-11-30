@@ -1,4 +1,4 @@
-class Submission {
+export default class Submission {
     constructor(studentId, week, repoUrl) {
         this.studentId = studentId;
         this.week = week;
@@ -8,5 +8,3 @@ class Submission {
         this.feedback = '';
     }
 }
-
-module.exports = Submission;

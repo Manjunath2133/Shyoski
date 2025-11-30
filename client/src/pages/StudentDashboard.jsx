@@ -8,6 +8,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import LockIcon from '@mui/icons-material/Lock';
 import CancelIcon from '@mui/icons-material/Cancel';
+import { BASE_URL } from '../utils/api';
 
 
 const weekData = [
@@ -36,10 +37,10 @@ const StudentDashboard = () => {
                 try {
                     const idToken = await auth.currentUser.getIdToken();
                     const [submissionsResponse, projectsResponse] = await Promise.all([
-                        fetch('http://localhost:8000/api/submissions', {
+                        fetch(`${BASE_URL}/submissions`, {
                             headers: { 'Authorization': `Bearer ${idToken}` }
                         }),
-                        fetch('http://localhost:8000/api/projects', {
+                        fetch(`${BASE_URL}/projects`, {
                             headers: { 'Authorization': `Bearer ${idToken}` }
                         })
                     ]);
@@ -67,14 +68,14 @@ const StudentDashboard = () => {
         e.preventDefault();
         try {
             const idToken = await auth.currentUser.getIdToken();
-            await fetch('http://localhost:8000/api/submissions/submit', {
+            await fetch(`${BASE_URL}/submissions/submit`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}`},
                 body: JSON.stringify({ week, repoUrl })
             });
 
             // Re-fetch submissions to update UI
-            const response = await fetch('http://localhost:8000/api/submissions', { headers: { 'Authorization': `Bearer ${idToken}` } });
+            const response = await fetch(`${BASE_URL}/submissions`, { headers: { 'Authorization': `Bearer ${idToken}` } });
             setSubmissions(await response.json());
             setRepoUrl('');
         } catch (error) {

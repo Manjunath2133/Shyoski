@@ -1,10 +1,11 @@
-const express = require('express');
-const router = express.Router();
-const adminController = require('../controllers/adminController');
-const checkRole = require('../middleware/authMiddleware');
+import { Hono } from 'hono';
+import * as adminController from '../controllers/adminController.js';
+import checkRole from '../middleware/authMiddleware.js';
 
-router.get('/users', checkRole(['admin', 'evaluator']), adminController.getAllUsers);
-router.put('/user-role', checkRole(['admin']), adminController.updateUserRole);
-router.get('/recent-submissions', checkRole(['admin']), adminController.getRecentSubmissions);
+const app = new Hono();
 
-module.exports = router;
+app.get('/users', checkRole(['admin', 'evaluator']), adminController.getAllUsers);
+app.put('/user-role', checkRole(['admin']), adminController.updateUserRole);
+app.get('/recent-submissions', checkRole(['admin']), adminController.getRecentSubmissions);
+
+export default app;

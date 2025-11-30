@@ -1,7 +1,8 @@
-const express = require('express');
-const router = express.Router();
-const authController = require('../controllers/authController');
+import { Hono } from 'hono';
+import * as authController from '../controllers/authController.js';
 
-router.post('/verify-token', authController.verifyTokenAndCreateUser);
+const app = new Hono();
 
-module.exports = router;
+app.post('/verify-token', authController.verifyTokenAndCreateUser);
+
+export default app;

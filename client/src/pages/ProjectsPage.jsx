@@ -3,6 +3,7 @@ import { useUser } from '../context/UserContext';
 import { auth } from '../firebase';
 import { Box, Typography, Button, Grid, Card, CardContent, CardActions, TextField, Dialog, DialogActions, DialogContent, DialogTitle, CircularProgress } from '@mui/material';
 import { motion } from 'framer-motion';
+import { BASE_URL } from '../utils/api';
 
 
 const ProjectsPage = () => {
@@ -18,7 +19,7 @@ const ProjectsPage = () => {
                 setLoading(true);
                 try {
                     const idToken = await auth.currentUser.getIdToken();
-                    const response = await fetch('http://localhost:8000/api/projects', {
+                    const response = await fetch(`${BASE_URL}/projects`, {
                         headers: { 'Authorization': `Bearer ${idToken}` }
                     });
                     const data = await response.json();
@@ -48,7 +49,7 @@ const ProjectsPage = () => {
         const formData = new FormData(e.target);
         const projectData = Object.fromEntries(formData.entries());
         
-        const url = currentProject ? `http://localhost:8000/api/projects/${currentProject.id}` : 'http://localhost:8000/api/projects';
+        const url = currentProject ? `${BASE_URL}/projects/${currentProject.id}` : `${BASE_URL}/projects`;
         const method = currentProject ? 'PUT' : 'POST';
 
         try {
@@ -77,7 +78,7 @@ const ProjectsPage = () => {
     const handleDelete = async (id) => {
         try {
             const idToken = await auth.currentUser.getIdToken();
-            await fetch(`http://localhost:8000/api/projects/${id}`, {
+            await fetch(`${BASE_URL}/projects/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${idToken}` }
             });

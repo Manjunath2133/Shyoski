@@ -1,24 +1,42 @@
-const admin = require('firebase-admin');
-const db = admin.firestore();
+import { toFirestoreUpdate } from '../utils/firebase.js';
 
-exports.recordPayment = async (req, res) => {
-    const studentId = req.user.id;
+export const recordPayment = async (c) => {
+    const projectId = c.env.FIREBASE_PROJECT_ID;
+    if (!projectId) { return c.json({ message: 'Firebase project ID is not configured.' }, 500); }
+
+    const studentId = c.get('user').id;
 
     try {
-        const userRef = db.collection('users').doc(studentId);
-        // In a real application, you would verify the payment here with a payment provider.
-        // For now, we just simulate a successful payment.
-        
         const certificateId = `SHYOSKI-CERT-${studentId.substring(0, 5)}-${Date.now()}`;
         
-        await userRef.update({ 
+        const updateData = {
             hasPaid: true,
             certificateId: certificateId
+        };
+
+        const { fields, updateMask } = toFirestoreUpdate(updateData);
+        const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${studentId}?${updateMask}`;
+
+        const idToken = c.req.header('Authorization').split('Bearer ')[1];
+
+        const response = await fetch(firestoreUrl, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${idToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ fields })
         });
 
-        res.status(200).json({ message: 'Payment recorded successfully', certificateId });
+        if (response.ok) {
+            return c.json({ message: 'Payment recorded successfully', certificateId });
+        } else {
+            const error = await response.json();
+            console.error('Error recording payment:', error);
+            return c.json({ message: 'Error recording payment' }, 500);
+        }
     } catch (error) {
         console.error('Error recording payment:', error);
-        res.status(500).json({ message: 'Error recording payment' });
+        return c.json({ message: 'Error recording payment' }, 500);
     }
 };

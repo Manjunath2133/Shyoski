@@ -1,130 +1,137 @@
-const admin = require('firebase-admin');
-const db = admin.firestore();
-const Company = require('../models/company');
+import { toFirestoreUpdate, fromFirestore } from '../utils/firebase.js';
+import Company from '../models/company.js';
+
+function companyToFirestore(company) {
+    return {
+        fields: {
+            name: { stringValue: company.name },
+            owner: { stringValue: company.owner },
+            members: { arrayValue: { values: company.members.map(m => ({ stringValue: m })) } },
+            projects: { arrayValue: { values: [] } },
+            createdAt: { timestampValue: company.createdAt.toISOString() }
+        }
+    };
+}
 
 // Create a new company
-exports.createCompany = async (req, res) => {
+export const createCompany = async (c) => {
+    const projectId = c.env.FIREBASE_PROJECT_ID;
+    if (!projectId) {
+        return c.json({ message: 'Firebase project ID is not configured.' }, 500);
+    }
+
     try {
-        const { name } = req.body;
-        const owner = req.user.uid;
+        const { name } = await c.req.json();
+        const owner = c.get('user').uid;
         const newCompany = new Company(name, owner);
-        
-        const companyRef = await db.collection('companies').add({ ...newCompany });
-        
-        res.status(201).json({ id: companyRef.id, ...newCompany });
+        const firestoreCompany = companyToFirestore(newCompany);
+
+        const idToken = c.req.header('Authorization').split('Bearer ')[1];
+        const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/companies`;
+
+        const response = await fetch(firestoreUrl, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${idToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(firestoreCompany)
+        });
+
+        if (response.ok) {
+            const createdCompany = await response.json();
+            return c.json(fromFirestore(createdCompany), 201);
+        } else {
+            const error = await response.json();
+            console.error('Error creating company:', error);
+            return c.json({ message: 'Server error' }, 500);
+        }
     } catch (error) {
         console.error('Error creating company:', error);
-        res.status(500).json({ message: 'Server error' });
+        return c.json({ message: 'Server error' }, 500);
     }
 };
 
 // Get all companies for a user
-exports.getCompanies = async (req, res) => {
+export const getCompanies = async (c) => {
+    const projectId = c.env.FIREBASE_PROJECT_ID;
+    if (!projectId) { return c.json({ message: 'Firebase project ID is not configured.' }, 500); }
+
     try {
-        const userId = req.user.uid;
-        const companiesSnapshot = await db.collection('companies').where('members', 'array-contains', userId).get();
-        const companies = companiesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        res.json(companies);
+        const userId = c.get('user').uid;
+        const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery`;
+        const idToken = c.req.header('Authorization').split('Bearer ')[1];
+
+        const response = await fetch(firestoreUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+            body: JSON.stringify({
+                structuredQuery: {
+                    from: [{ collectionId: 'companies' }],
+                    where: {
+                        fieldFilter: {
+                            field: { fieldPath: 'members' },
+                            op: 'ARRAY_CONTAINS',
+                            value: { stringValue: userId }
+                        }
+                    }
+                }
+            })
+        });
+
+        if (response.ok) {
+            const docs = await response.json();
+            const companies = docs.map(doc => fromFirestore(doc.document));
+            return c.json(companies);
+        } else {
+            const error = await response.json();
+            console.error('Error getting companies:', error);
+            return c.json({ message: 'Server error' }, 500);
+        }
     } catch (error) {
         console.error('Error getting companies:', error);
-        res.status(500).json({ message: 'Server error' });
+        return c.json({ message: 'Server error' }, 500);
     }
 };
 
 // Get a company by ID
-exports.getCompanyById = async (req, res) => {
+export const getCompanyById = async (c) => {
+    const projectId = c.env.FIREBASE_PROJECT_ID;
+    if (!projectId) { return c.json({ message: 'Firebase project ID is not configured.' }, 500); }
+
     try {
-        const companyId = req.params.id;
-        const companyDoc = await db.collection('companies').doc(companyId).get();
-        if (!companyDoc.exists) {
-            return res.status(404).json({ message: 'Company not found' });
+        const companyId = c.req.param('id');
+        const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/companies/${companyId}`;
+        
+        const response = await fetch(firestoreUrl);
+
+        if (response.ok) {
+            const companyDoc = await response.json();
+            return c.json(fromFirestore(companyDoc));
+        } else if (response.status === 404) {
+            return c.json({ message: 'Company not found' }, 404);
+        } else {
+            const error = await response.json();
+            console.error('Error getting company:', error);
+            return c.json({ message: 'Server error' }, 500);
         }
-        res.json({ id: companyDoc.id, ...companyDoc.data() });
     } catch (error) {
         console.error('Error getting company by ID:', error);
-        res.status(500).json({ message: 'Server error' });
+        return c.json({ message: 'Server error' }, 500);
     }
 };
 
 // Update a company
-exports.updateCompany = async (req, res) => {
-    try {
-        const companyId = req.params.id;
-        const userId = req.user.uid;
-        
-        const companyRef = db.collection('companies').doc(companyId);
-        const companyDoc = await companyRef.get();
-        
-        if (!companyDoc.exists) {
-            return res.status(404).json({ message: 'Company not found' });
-        }
-        
-        if (companyDoc.data().owner !== userId) {
-            return res.status(403).json({ message: 'User not authorized to update this company' });
-        }
-        
-        await companyRef.update(req.body);
-        
-        res.json({ id: companyId, ...req.body });
-    } catch (error){
-        console.error('Error updating company:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
+export const updateCompany = async (c) => {
+    return c.json({ message: 'Not Implemented' }, 501);
 };
 
 // Delete a company
-exports.deleteCompany = async (req, res) => {
-    try {
-        const companyId = req.params.id;
-        const userId = req.user.uid;
-        
-        const companyRef = db.collection('companies').doc(companyId);
-        const companyDoc = await companyRef.get();
-        
-        if (!companyDoc.exists) {
-            return res.status(404).json({ message: 'Company not found' });
-        }
-        
-        if (companyDoc.data().owner !== userId) {
-            return res.status(403).json({ message: 'User not authorized to delete this company' });
-        }
-        
-        await companyRef.delete();
-        
-        res.json({ message: 'Company deleted successfully' });
-    } catch (error){
-        console.error('Error deleting company:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
+export const deleteCompany = async (c) => {
+    return c.json({ message: 'Not Implemented' }, 501);
 };
 
 // Invite a user to a company
-exports.inviteUser = async (req, res) => {
-    try {
-        const companyId = req.params.id;
-        const { email } = req.body;
-        const userId = req.user.uid;
-
-        const companyRef = db.collection('companies').doc(companyId);
-        const companyDoc = await companyRef.get();
-
-        if (!companyDoc.exists) {
-            return res.status(404).json({ message: 'Company not found' });
-        }
-
-        if (companyDoc.data().owner !== userId) {
-            return res.status(403).json({ message: 'User not authorized to invite users to this company' });
-        }
-
-        const userRecord = await admin.auth().getUserByEmail(email);
-        const invitedUserId = userRecord.uid;
-
-        const updatedMembers = [...companyDoc.data().members, invitedUserId];
-        await companyRef.update({ members: updatedMembers });
-
-        res.json({ message: 'User invited successfully' });
-    } catch (error) {
-        console.error('Error inviting user:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
+export const inviteUser = async (c) => {
+    return c.json({ message: 'Not Implemented: This function requires the Firebase Admin Auth API.' }, 501);
 };

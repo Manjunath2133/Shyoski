@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import { auth } from '../firebase';
+import { BASE_URL } from '../utils/api';
 
 const PaymentPage = () => {
     const { user, setUser } = useUser();
@@ -10,7 +11,7 @@ const PaymentPage = () => {
     const handlePayment = async () => {
         try {
             const idToken = await auth.currentUser.getIdToken();
-            const response = await fetch('http://localhost:8000/api/payment/record', {
+            const response = await fetch(`${BASE_URL}/payment/record`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${idToken}`

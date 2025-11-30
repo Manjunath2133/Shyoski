@@ -1,8 +1,9 @@
-const express = require('express');
-const router = express.Router();
-const paymentController = require('../controllers/paymentController');
-const checkRole = require('../middleware/authMiddleware');
+import { Hono } from 'hono';
+import * as paymentController from '../controllers/paymentController.js';
+import checkRole from '../middleware/authMiddleware.js';
 
-router.post('/record', checkRole(['student']), paymentController.recordPayment);
+const app = new Hono();
 
-module.exports = router;
+app.post('/record', checkRole(['student']), paymentController.recordPayment);
+
+export default app;

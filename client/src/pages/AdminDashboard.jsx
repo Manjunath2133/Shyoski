@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import PeopleIcon from '@mui/icons-material/People';
 import SchoolIcon from '@mui/icons-material/School';
 import WorkIcon from '@mui/icons-material/Work';
+import { BASE_URL } from '../utils/api';
 
 const AdminDashboard = () => {
     const { user } = useUser();
@@ -21,10 +22,10 @@ const AdminDashboard = () => {
                 try {
                     const idToken = await auth.currentUser.getIdToken();
                     const [usersResponse, submissionsResponse] = await Promise.all([
-                        fetch('http://localhost:8000/api/admin/users', {
+                        fetch(`${BASE_URL}/admin/users`, {
                             headers: { 'Authorization': `Bearer ${idToken}` }
                         }),
-                        fetch('http://localhost:8000/api/admin/recent-submissions', {
+                        fetch(`${BASE_URL}/admin/recent-submissions`, {
                             headers: { 'Authorization': `Bearer ${idToken}` }
                         })
                     ]);
@@ -45,7 +46,7 @@ const AdminDashboard = () => {
     const handleRoleChange = async (uid, newRole) => {
         try {
             const idToken = await auth.currentUser.getIdToken();
-            await fetch('http://localhost:8000/api/admin/user-role', {
+            await fetch(`${BASE_URL}/admin/user-role`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

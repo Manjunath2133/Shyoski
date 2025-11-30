@@ -4,6 +4,7 @@ import { Card, CardContent, Typography, Avatar, Box, CircularProgress, Button, T
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../firebase';
+import { BASE_URL } from '../utils/api';
 
 const ProfilePage = () => {
     const { user, setUser } = useUser();
@@ -30,7 +31,7 @@ const ProfilePage = () => {
 
         try {
             const idToken = await auth.currentUser.getIdToken();
-            const response = await fetch('http://localhost:8000/api/users', {
+            const response = await fetch(`${BASE_URL}/users`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

@@ -1,33 +1,50 @@
-const admin = require('firebase-admin');
-
-const db = admin.firestore();
+import { verifyIdToken } from '../utils/firebase.js';
 
 const checkRole = (roles) => {
-    return async (req, res, next) => {
-        const { authorization } = req.headers;
+    return async (c, next) => {
+        const authHeader = c.req.header('Authorization');
 
-        if (!authorization || !authorization.startsWith('Bearer ')) {
-            return res.status(401).json({ message: 'Unauthorized' });
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return c.json({ message: 'Unauthorized' }, 401);
         }
 
-        const idToken = authorization.split('Bearer ')[1];
+        const idToken = authHeader.split('Bearer ')[1];
+        const projectId = c.env.FIREBASE_PROJECT_ID;
+
+        if (!projectId) {
+            return c.json({ message: 'Firebase project ID is not configured.' }, 500);
+        }
 
         try {
-            const decodedToken = await admin.auth().verifyIdToken(idToken);
-            const userRef = db.collection('users').doc(decodedToken.uid);
-            const userDoc = await userRef.get();
+            const decodedToken = await verifyIdToken(idToken, projectId);
+            const userId = decodedToken.uid;
 
-            if (userDoc.exists && roles.includes(userDoc.data().role)) {
-                req.user = { id: userDoc.id, uid: userDoc.id, ...userDoc.data() };
-                return next();
+            // Fetch user from Firestore using REST API
+            const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}`;
+            const response = await fetch(firestoreUrl, {
+                headers: {
+                    'Authorization': `Bearer ${idToken}` // Using the same token for authorization
+                }
+            });
+
+            if (!response.ok) {
+                 return c.json({ message: 'Error fetching user data.' }, response.status);
+            }
+
+            const userDoc = await response.json();
+            const userRole = userDoc.fields.role.stringValue;
+
+            if (userDoc && roles.includes(userRole)) {
+                c.set('user', { id: userId, uid: userId, role: userRole });
+                await next();
             } else {
-                return res.status(403).json({ message: 'Forbidden' });
+                return c.json({ message: 'Forbidden' }, 403);
             }
         } catch (error) {
             console.error('Error while verifying token or role', error);
-            return res.status(401).json({ message: 'Unauthorized' });
+            return c.json({ message: 'Unauthorized' }, 401);
         }
     };
 };
 
-module.exports = checkRole;
+export default checkRole;

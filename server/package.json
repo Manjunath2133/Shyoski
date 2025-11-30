@@ -11,10 +11,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.0.3",
-    "express": "^4.18.2",
-    "firebase-admin": "^11.5.0"
+    "hono": "^4.10.7",
+    "jose": "^5.2.4"
   },
   "devDependencies": {
     "nodemon": "^2.0.20"

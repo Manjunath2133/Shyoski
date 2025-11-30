@@ -1,4 +1,4 @@
-class Company {
+export default class Company {
     constructor(name, owner) {
         this.name = name;
         this.owner = owner;
@@ -7,5 +7,3 @@ class Company {
         this.createdAt = new Date();
     }
 }
-
-module.exports = Company;

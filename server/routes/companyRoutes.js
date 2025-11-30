@@ -1,36 +1,39 @@
-const express = require('express');
-const router = express.Router();
-const companyController = require('../controllers/companyController');
-const authMiddleware = require('../middleware/authMiddleware');
+import { Hono } from 'hono';
+import * as companyController from '../controllers/companyController.js';
+import authMiddleware from '../middleware/authMiddleware.js';
+
+const app = new Hono();
+
+const standardAuth = authMiddleware(['student', 'evaluator', 'admin']);
 
 // @route   POST api/companies
 // @desc    Create a new company
 // @access  Private
-router.post('/', authMiddleware, companyController.createCompany);
+app.post('/', standardAuth, companyController.createCompany);
 
 // @route   GET api/companies
 // @desc    Get all companies for a user
 // @access  Private
-router.get('/', authMiddleware, companyController.getCompanies);
+app.get('/', standardAuth, companyController.getCompanies);
 
 // @route   GET api/companies/:id
 // @desc    Get a company by ID
 // @access  Private
-router.get('/:id', authMiddleware, companyController.getCompanyById);
+app.get('/:id', standardAuth, companyController.getCompanyById);
 
 // @route   PUT api/companies/:id
 // @desc    Update a company
 // @access  Private
-router.put('/:id', authMiddleware, companyController.updateCompany);
+app.put('/:id', standardAuth, companyController.updateCompany);
 
 // @route   DELETE api/companies/:id
 // @desc    Delete a company
 // @access  Private
-router.delete('/:id', authMiddleware, companyController.deleteCompany);
+app.delete('/:id', standardAuth, companyController.deleteCompany);
 
 // @route   POST api/companies/:id/invite
 // @desc    Invite a user to a company
 // @access  Private
-router.post('/:id/invite', authMiddleware, companyController.inviteUser);
+app.post('/:id/invite', standardAuth, companyController.inviteUser);
 
-module.exports = router;
+export default app;

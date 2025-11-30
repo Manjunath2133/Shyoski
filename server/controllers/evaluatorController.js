@@ -1,112 +1,156 @@
-const admin = require('firebase-admin');
-const db = admin.firestore();
+import { toFirestoreUpdate, fromFirestore } from '../utils/firebase.js';
 
-exports.updateSubmissionStatus = async (req, res) => {
-    const evaluatorId = req.user.uid;
-    const { studentId, week, status } = req.body;
+export const updateSubmissionStatus = async (c) => {
+    const projectId = c.env.FIREBASE_PROJECT_ID;
+    if (!projectId) { return c.json({ message: 'Firebase project ID is not configured.' }, 500); }
+
+    const evaluatorId = c.get('user').uid;
+    const { studentId, week, status } = await c.req.json();
 
     try {
-        const submissionRef = db.collection('submissions').doc(`${studentId}_week${week}`);
-        await submissionRef.update({ status, evaluatorId });
-        res.status(200).json({ message: `Submission for week ${week} updated to ${status}` });
+        const docId = `${studentId}_week${week}`;
+        const updateData = { status, evaluatorId };
+        const { fields, updateMask } = toFirestoreUpdate(updateData);
+        
+        const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/submissions/${docId}?${updateMask}`;
+        const idToken = c.req.header('Authorization').split('Bearer ')[1];
+
+        const response = await fetch(firestoreUrl, {
+            method: 'PATCH',
+            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fields })
+        });
+
+        if (response.ok) {
+            return c.json({ message: `Submission for week ${week} updated to ${status}` });
+        } else {
+            const error = await response.json();
+            console.error('Error updating submission status:', error);
+            return c.json({ message: 'Error updating submission status' }, 500);
+        }
     } catch (error) {
         console.error('Error updating submission status:', error);
-        res.status(500).json({ message: 'Error updating submission status' });
+        return c.json({ message: 'Error updating submission status' }, 500);
     }
 };
 
-exports.addFeedback = async (req, res) => {
-    const { studentId, week, feedback } = req.body;
+export const addFeedback = async (c) => {
+    const projectId = c.env.FIREBASE_PROJECT_ID;
+    if (!projectId) { return c.json({ message: 'Firebase project ID is not configured.' }, 500); }
+    
+    const { studentId, week, feedback } = await c.req.json();
 
     try {
-        const submissionRef = db.collection('submissions').doc(`${studentId}_week${week}`);
-        await submissionRef.update({ feedback });
-        res.status(200).json({ message: `Feedback for week ${week} added` });
+        const docId = `${studentId}_week${week}`;
+        const updateData = { feedback };
+        const { fields, updateMask } = toFirestoreUpdate(updateData);
+
+        const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/submissions/${docId}?${updateMask}`;
+        const idToken = c.req.header('Authorization').split('Bearer ')[1];
+
+        const response = await fetch(firestoreUrl, {
+            method: 'PATCH',
+            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fields })
+        });
+
+        if (response.ok) {
+            return c.json({ message: `Feedback for week ${week} added` });
+        } else {
+            const error = await response.json();
+            console.error('Error adding feedback:', error);
+            return c.json({ message: 'Error adding feedback' }, 500);
+        }
     } catch (error) {
         console.error('Error adding feedback:', error);
-        res.status(500).json({ message: 'Error adding feedback' });
+        return c.json({ message: 'Error adding feedback' }, 500);
     }
 };
 
-exports.getStudentSubmissions = async (req, res) => {
-    const { studentId } = req.params;
+export const getStudentSubmissions = async (c) => {
+    const projectId = c.env.FIREBASE_PROJECT_ID;
+    if (!projectId) { return c.json({ message: 'Firebase project ID is not configured.' }, 500); }
+
+    const { studentId } = c.req.param();
 
     try {
-        const submissionsRef = db.collection('submissions').where('studentId', '==', studentId);
-        const snapshot = await submissionsRef.get();
+        const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery`;
+        const idToken = c.req.header('Authorization').split('Bearer ')[1];
         
-        if (snapshot.empty) {
-            return res.status(200).json([]);
-        }
-
-        const submissions = [];
-        snapshot.forEach(doc => {
-            submissions.push(doc.data());
+        const response = await fetch(firestoreUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+            body: JSON.stringify({
+                structuredQuery: {
+                    from: [{ collectionId: 'submissions' }],
+                    where: { fieldFilter: { field: { fieldPath: 'studentId' }, op: 'EQUAL', value: { stringValue: studentId } } }
+                }
+            })
         });
 
-        res.status(200).json(submissions);
-    }
- catch (error) {
+        if (response.ok) {
+            const docs = await response.json();
+            const submissions = docs.map(doc => fromFirestore(doc.document));
+            return c.json(submissions);
+        } else {
+            const error = await response.json();
+            console.error('Error getting submissions:', error);
+            return c.json({ message: 'Error getting submissions' }, 500);
+        }
+    } catch (error) {
         console.error('Error getting submissions:', error);
-        res.status(500).json({ message: 'Error getting submissions' });
+        return c.json({ message: 'Error getting submissions' }, 500);
     }
 };
 
-exports.getAllSubmissions = async (req, res) => {
-    try {
-        const submissionsSnapshot = await db.collection('submissions').get();
-        const usersSnapshot = await db.collection('users').get();
+export const getAllSubmissions = async (c) => {
+    const projectId = c.env.FIREBASE_PROJECT_ID;
+    if (!projectId) { return c.json({ message: 'Firebase project ID is not configured.' }, 500); }
 
+    try {
+        const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents`;
+        const idToken = c.req.header('Authorization').split('Bearer ')[1];
+
+        const [submissionsRes, usersRes] = await Promise.all([
+            fetch(`${firestoreUrl}:runQuery`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+                body: JSON.stringify({ structuredQuery: { from: [{ collectionId: 'submissions' }] } })
+            }),
+            fetch(`${firestoreUrl}/users`, { headers: { 'Authorization': `Bearer ${idToken}` }})
+        ]);
+
+        const submissionsDocs = await submissionsRes.json();
+        const usersDocs = await usersRes.json();
+        
         const users = {};
-        usersSnapshot.forEach(doc => {
-            const userData = doc.data();
-            users[doc.id] = {
-                name: userData.name,
-                email: userData.email,
-            };
-        });
+        if(usersDocs.documents) {
+            usersDocs.documents.forEach(doc => {
+                const userData = fromFirestore(doc);
+                users[userData.id] = { name: userData.name, email: userData.email };
+            });
+        }
 
         const allSubmissions = [];
-        submissionsSnapshot.forEach(doc => {
-            const submission = doc.data();
-            const user = users[submission.studentId];
-            if (user) {
-                allSubmissions.push({
-                    ...submission,
-                    studentName: user.name,
-                    studentEmail: user.email,
-                });
-            }
-        });
-
-        res.status(200).json(allSubmissions);
-    }
- catch (error) {
+        if(submissionsDocs) {
+            submissionsDocs.forEach(doc => {
+                if(doc.document) {
+                    const submission = fromFirestore(doc.document);
+                    const user = users[submission.studentId];
+                    if (user) {
+                        allSubmissions.push({ ...submission, studentName: user.name, studentEmail: user.email });
+                    }
+                }
+            });
+        }
+        
+        return c.json(allSubmissions);
+    } catch (error) {
         console.error('Error getting all submissions:', error);
-        res.status(500).json({ message: 'Error getting all submissions' });
+        return c.json({ message: 'Error getting all submissions' }, 500);
     }
 };
 
-exports.getStudentProjects = async (req, res) => {
-    try {
-        const evaluatorId = req.user.uid;
-        
-        // Get all submissions evaluated by the evaluator
-        const submissionsSnapshot = await db.collection('submissions').where('evaluatorId', '==', evaluatorId).get();
-        const studentIds = [...new Set(submissionsSnapshot.docs.map(doc => doc.data().studentId))];
-        
-        if (studentIds.length === 0) {
-            return res.json([]);
-        }
-        
-        // Get all projects for the students
-        const projectsSnapshot = await db.collection('projects').where('author', 'in', studentIds).get();
-        const projects = projectsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
-        res.json(projects);
-    }
- catch (error) {
-        console.error('Error getting student projects:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
-}
+export const getStudentProjects = async (c) => {
+     return c.json({ message: 'Not Implemented. This query is complex and best handled by a dedicated endpoint or Cloud Function.' }, 501);
+};

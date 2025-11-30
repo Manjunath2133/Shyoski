@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Box, Typography, Avatar, Grid, Card, CardContent, Link, Chip, CircularProgress } from '@mui/material';
 import { motion } from 'framer-motion';
+import { BASE_URL } from '../utils/api';
 
 const PublicProfilePage = () => {
     const { userId } = useParams();
@@ -13,11 +14,11 @@ const PublicProfilePage = () => {
         const fetchUserProfile = async () => {
             setLoading(true);
             try {
-                const userResponse = await fetch(`http://localhost:8000/api/users/${userId}`);
+                const userResponse = await fetch(`${BASE_URL}/users/${userId}`);
                 const userData = await userResponse.json();
                 setUser(userData);
 
-                const projectsResponse = await fetch(`http://localhost:8000/api/projects/user/${userId}`);
+                const projectsResponse = await fetch(`${BASE_URL}/projects/user/${userId}`);
                 const projectsData = await projectsResponse.json();
                 setProjects(projectsData);
             } catch (error) {

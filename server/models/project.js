@@ -1,4 +1,4 @@
-class Project {
+export default class Project {
     constructor(title, description, technologies, liveUrl, repoUrl, screenshots, author) {
         this.title = title;
         this.description = description;
@@ -10,5 +10,3 @@ class Project {
         this.createdAt = new Date();
     }
 }
-
-module.exports = Project;
