@@ -12,7 +12,12 @@ export const getUserById = async (c) => {
         const userId = c.req.param('id');
         const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}`;
 
-        const response = await fetch(firestoreUrl);
+        const accessToken = await getGcpAccessToken(c.env);
+        const response = await fetch(firestoreUrl, {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
 
         if (response.ok) {
             const userDoc = await response.json();

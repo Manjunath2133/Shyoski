@@ -53,10 +53,14 @@ export const getProjectsByUserId = async (c) => {
 
     try {
         const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery`;
-        
+        const accessToken = await getGcpAccessToken(c.env);
+
         const response = await fetch(firestoreUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }, // This is a public route, no auth needed
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            },
             body: JSON.stringify({
                 structuredQuery: {
                     from: [{ collectionId: 'projects' }],
@@ -87,8 +91,11 @@ export const getProjectById = async (c) => {
     try {
         const projId = c.req.param('id');
         const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/projects/${projId}`;
-        
-        const response = await fetch(firestoreUrl);
+
+        const accessToken = await getGcpAccessToken(c.env);
+        const response = await fetch(firestoreUrl, {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
 
         if (response.ok) {
             const projectDoc = await response.json();

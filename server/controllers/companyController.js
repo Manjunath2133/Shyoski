@@ -106,8 +106,11 @@ export const getCompanyById = async (c) => {
     try {
         const companyId = c.req.param('id');
         const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/companies/${companyId}`;
-        
-        const response = await fetch(firestoreUrl);
+
+        const accessToken = await getGcpAccessToken(c.env);
+        const response = await fetch(firestoreUrl, {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
 
         if (response.ok) {
             const companyDoc = await response.json();
