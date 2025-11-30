@@ -2,3 +2,6 @@ name = "shyoski-backend"
 main = "index.js"                      # path to the file that exports your express app
 compatibility_date = "2025-11-30"         # set to a recent date (YYYY-MM-DD)
 compatibility_flags = ["nodejs_compat"]   # enable Node compatibility
+
+[vars]
+FIREBASE_PROJECT_ID = "shyoski-88e92"
