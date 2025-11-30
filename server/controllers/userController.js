@@ -46,7 +46,7 @@ export const updateUser = async (c) => {
         const userId = c.get('user').uid;
         const body = await c.req.json();
         const { fields, updateMask } = toFirestoreUpdate(body);
-        const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}?${updateMask}`;
+        const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${userId}?updateMask.fieldPaths=${updateMask}`;
 
         const accessToken = await getGcpAccessToken(c.env);
 
