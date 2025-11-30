@@ -68,6 +68,7 @@
 // controllers/authController.js
 import { verifyIdToken, userToFirestore, fromFirestore } from '../utils/firebase.js';
 import User from '../models/user.js';
+import { getGcpAccessToken } from '../utils/gcp-auth.js';
 
 export const verifyTokenAndCreateUser = async (c) => {
   try {
@@ -101,11 +102,13 @@ export const verifyTokenAndCreateUser = async (c) => {
     const docPath = `projects/${projectId}/databases/(default)/documents/users/${uid}`;
     const firestoreDocUrl = `https://firestore.googleapis.com/v1/${docPath}`;
 
+    const accessToken = await getGcpAccessToken(c.env);
+
     // Try GET to see if user exists
     const getResp = await fetch(firestoreDocUrl, {
       method: 'GET',
       headers: {
-        Authorization: `Bearer ${idToken}`,
+        Authorization: `Bearer ${accessToken}`,
       }
     });
 
@@ -132,7 +135,7 @@ export const verifyTokenAndCreateUser = async (c) => {
     const createResp = await fetch(createUrl, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${idToken}`,
+        Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(firestoreUser)
