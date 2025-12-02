@@ -27,7 +27,7 @@ const Contact = () => {
             <h3 className="text-xl font-bold text-slate-900 mb-2">Email Us</h3>
             <p className="text-slate-500 mb-4">For Internship related quieries and support</p>
             <a href="mailto:contact@shyoski.com" className="text-blue-600 font-semibold hover:underline">
-              shyoski@gmail.com
+              shyoski.interns@gmail.com
             </a>
           </div>
 
@@ -39,7 +39,7 @@ const Contact = () => {
             <h3 className="text-xl font-bold text-slate-900 mb-2">Email Us</h3>
             <p className="text-slate-500 mb-4">For general inquiries and support</p>
             <a href="mailto:contact@shyoski.com" className="text-blue-600 font-semibold hover:underline">
-              shyoski.interns@gmail.com
+              shyoski@gmail.com
             </a>
           </div>
 
