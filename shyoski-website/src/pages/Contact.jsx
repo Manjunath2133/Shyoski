@@ -51,7 +51,7 @@ const Contact = () => {
             <h3 className="text-xl font-bold text-slate-900 mb-2">Call Us</h3>
             <p className="text-slate-500 mb-4">Mon-Fri from 9am to 6pm</p>
             <p className="text-slate-900 font-semibold">
-              +91 8147010665, 9148946410
+              +91 8147010665, +91 9148946410
             </p>
           </div>
 

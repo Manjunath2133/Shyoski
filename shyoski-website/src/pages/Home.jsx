@@ -95,7 +95,7 @@ const Home = () => {
             <span className="text-xl font-bold text-white flex items-center gap-2"><CheckCircle size={18} className="text-blue-500"/> Full Stack Web Development</span>
             <span className="text-xl font-bold text-white flex items-center gap-2"><CheckCircle size={18} className="text-green-500"/> Cyber Security</span>
             <span className="text-xl font-bold text-white flex items-center gap-2"><CheckCircle size={18} className="text-cyan-500"/> Java</span>
-            <span className="text-xl font-bold text-white flex items-center gap-2"><CheckCircle size={18} className="text-orange-500"/>MAchine Learning</span>
+            <span className="text-xl font-bold text-white flex items-center gap-2"><CheckCircle size={18} className="text-orange-500"/>Machine Learning</span>
             <span className="text-xl font-bold text-white flex items-center gap-2"><CheckCircle size={18} className="text-purple-500"/>UI/UX</span>
           </div>
         </div>
