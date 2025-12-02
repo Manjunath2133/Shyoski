@@ -19,7 +19,19 @@ const Contact = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid md:grid-cols-3 gap-8 mb-16">
           
-          {/* Email Card */}
+          {/* internship Email Card */}
+          <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 text-center hover:shadow-md transition-shadow">
+            <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mx-auto mb-6">
+              <Mail size={28} />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">Email Us</h3>
+            <p className="text-slate-500 mb-4">For Internship related quieries and support</p>
+            <a href="mailto:contact@shyoski.com" className="text-blue-600 font-semibold hover:underline">
+              shyoski@gmail.com
+            </a>
+          </div>
+
+          {/* for official email*/}
           <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 text-center hover:shadow-md transition-shadow">
             <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mx-auto mb-6">
               <Mail size={28} />
@@ -27,7 +39,7 @@ const Contact = () => {
             <h3 className="text-xl font-bold text-slate-900 mb-2">Email Us</h3>
             <p className="text-slate-500 mb-4">For general inquiries and support</p>
             <a href="mailto:contact@shyoski.com" className="text-blue-600 font-semibold hover:underline">
-              contact@shyoski.com
+              shyoski.interns@gmail.com
             </a>
           </div>
 
@@ -39,7 +51,7 @@ const Contact = () => {
             <h3 className="text-xl font-bold text-slate-900 mb-2">Call Us</h3>
             <p className="text-slate-500 mb-4">Mon-Fri from 9am to 6pm</p>
             <p className="text-slate-900 font-semibold">
-              +91 98765 43210
+              +91 8147010665, 9148946410
             </p>
           </div>
 

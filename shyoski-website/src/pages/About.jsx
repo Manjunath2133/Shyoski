@@ -21,7 +21,7 @@ const About = () => {
           <div>
             <h2 className="text-3xl font-bold text-slate-900 mb-6">Our Mission</h2>
             <p className="text-lg text-slate-600 mb-6 leading-relaxed">
-              Shyoski was founded with a single goal: **To bridge the gap between academic learning and industry requirements.**
+              Shyoski was founded with a single goal: To bridge the gap between academic learning and industry requirements.
             </p>
             <p className="text-lg text-slate-600 mb-6 leading-relaxed">
               We realized that many brilliant students graduate without the practical skills needed to survive in a corporate environment. Our internship program changes that by providing an ecosystem where students work on <span className="text-blue-600 font-bold">real-world projects</span> under the guidance of industry experts.

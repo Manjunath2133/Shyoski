@@ -92,11 +92,11 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-4 text-center">
           <p className="text-sm uppercase tracking-widest mb-6 font-semibold">Technologies You Will Master</p>
           <div className="flex flex-wrap justify-center gap-8 md:gap-16 opacity-70">
-            <span className="text-xl font-bold text-white flex items-center gap-2"><CheckCircle size={18} className="text-blue-500"/> React</span>
-            <span className="text-xl font-bold text-white flex items-center gap-2"><CheckCircle size={18} className="text-green-500"/> Node.js</span>
-            <span className="text-xl font-bold text-white flex items-center gap-2"><CheckCircle size={18} className="text-cyan-500"/> Flutter</span>
-            <span className="text-xl font-bold text-white flex items-center gap-2"><CheckCircle size={18} className="text-orange-500"/> Firebase</span>
-            <span className="text-xl font-bold text-white flex items-center gap-2"><CheckCircle size={18} className="text-purple-500"/> Python</span>
+            <span className="text-xl font-bold text-white flex items-center gap-2"><CheckCircle size={18} className="text-blue-500"/> Full Stack Web Development</span>
+            <span className="text-xl font-bold text-white flex items-center gap-2"><CheckCircle size={18} className="text-green-500"/> Cyber Security</span>
+            <span className="text-xl font-bold text-white flex items-center gap-2"><CheckCircle size={18} className="text-cyan-500"/> Java</span>
+            <span className="text-xl font-bold text-white flex items-center gap-2"><CheckCircle size={18} className="text-orange-500"/>MAchine Learning</span>
+            <span className="text-xl font-bold text-white flex items-center gap-2"><CheckCircle size={18} className="text-purple-500"/>UI/UX</span>
           </div>
         </div>
       </section>
